@@ -19,11 +19,11 @@
                 v-model="item.data">
               </el-input> -->
               <div class="preview">
-                <div class="text-center" v-if="/image/i.test(item.type)"><img :src="item.data" style="width: 100%"></div>
+                <div v-if="item.showRaw" v-text="item.data" class="height-limit"></div>
+                <div class="text-center" v-else-if="/image/i.test(item.type)"><img :src="item.data" style="max-width: 100%"></div>
                 <div v-else-if="item.type === 'text/html'" v-html="item.data" class="height-limit"></div>
-                <div v-else v-text="item.data" class="height-limit">
-                </div>
               </div>
+              <el-checkbox v-if="isTypeCanPreview(item.type)" style="margin: 15px 0;" v-model="item.showRaw">Raw</el-checkbox>
             </div>
           </div>
         </el-tab-pane>
@@ -69,6 +69,13 @@ export default {
         itemIndex: 0
       }
     },
+    isTypeCanPreview(type) {
+      // 不是图片也不是 html
+      if (/image/i.test(type) || /html/i.test(type)) {
+        return true
+      }
+      return false
+    },
     onPaste (e) {
       var items = _.map(e.clipboardData.items, item => this.readItem(item))
       return Promise.all(items).then(items => {
@@ -82,7 +89,7 @@ export default {
         clipboardData.itemIndex = 0
       }).then(() => {
         this.$message({
-          message: '复制成功',
+          message: 'Paste Success',
           type: 'success'
         })
       })
@@ -91,7 +98,8 @@ export default {
       return new Promise((resolve, reject) => {
         var ret = {
           kind: item.kind,
-          type: item.type
+          type: item.type,
+          showRaw: !this.isTypeCanPreview(item.type)
         }
         ret.score = this.getScore(item.type)
         if (item.kind === 'file') {
