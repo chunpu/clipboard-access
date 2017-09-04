@@ -2,29 +2,31 @@
   <div id="app">
     <div id="box">
       <el-tabs>
-        <el-tab-pane label="Show Clipboard">
+        <el-tab-pane label="Tab" v-for="clipboardData in clipboardDataList">
+          <div>
 
-          <el-input
-            type="textarea"
-            :autosize="{minRows: 6, maxRows: 6}"
-            autofocus
-            @paste.native.prevent="onPaste"
-            placeholder="Ctrl/Command + v"
-            v-model="paste.currentData">
-          </el-input>
+            <div class="types">
+              <el-radio-group v-model="clipboardData.itemIndex">
+                <el-radio-button v-for="(item, i) in clipboardData.items" :label="i">{{item.type}}</el-radio-button>
+              </el-radio-group>
+            </div>
 
-          <div class="types">
-            <el-radio v-for="item in paste.types" v-model="paste.currentType" :label="item"></el-radio>
+            <div v-for="(item, i) in clipboardData.items" v-if="i === clipboardData.itemIndex">
+<!--               <el-input
+                type="textarea"
+                :autosize="{minRows: 6, maxRows: 6}"
+                placeholder="Ctrl/Command + v"
+                v-model="item.data">
+              </el-input> -->
+              <div class="preview">
+                <div class="text-center" v-if="/image/i.test(item.type)"><img :src="item.data" style="width: 100%"></div>
+                <div v-else-if="item.type === 'text/html'" v-html="item.data" class="height-limit"></div>
+                <div v-else v-text="item.data" class="height-limit">
+                </div>
+              </div>
+            </div>
           </div>
-
-          <div id="preview">
-            <!-- 预览 -->
-            <div v-if="paste.currentType == 'text/html'" v-html="paste.currentData"></div>
-            <div class="text-center" v-if="/image/i.test(paste.currentType)"><img :src="paste.currentData"></div>
-          </div>
-
         </el-tab-pane>
-        <el-tab-pane label="Set Clipboard">Coming Soon!</el-tab-pane>
       </el-tabs>
     </div>
     <!-- <router-view></router-view> -->
@@ -35,62 +37,85 @@
 
 import * as _ from 'lodash'
 
-// const share = {}
+// 相比其他剪贴板工具的特色是, 可以手动生成剪贴板, 可以查看 html 具体内容
+// 数据结构是这样的
+// clipboardDataList => 可以保存一连串的 clipboardData, 这个可以后面做, 先始终只改第一个
+// 可以自己新建 clipboardData
+// clipboardData.itemList 包含各种格式
+// item => {type(mime), data}
+// clipboardData 可以被修改, 然后继续复制
+// 一开始, clipboardData 是空的, 然后被 Ctrl + V 填充
+// 可以新建 clipboardData, 然后自己设置
+// clipboardData 中可以新建 item
 
 export default {
   name: 'app',
   data () {
     return {
-      textarea: '',
-      paste: {
-        types: [],
-        currentData: null,
-        currentType: null,
-        items: []
-      }
+      clipboardDataList: [this.createClipboardData()],
+      index: 0
     }
   },
   watch: {
-    'paste.currentType' () {
-      var currentItem = this.paste.items.find(item => {
-        // 因为是粘贴, 所以不可能重复, drag 会
-        return item.type === this.paste.currentType
-      })
-      if (currentItem) {
-        this.paste.currentData = currentItem.data
-      }
-    }
   },
   mounted () {
     window.app = this
+    document.addEventListener('paste', this.onPaste)
   },
   methods: {
+    createClipboardData () {
+      return {
+        items: [],
+        itemIndex: 0
+      }
+    },
     onPaste (e) {
-      var items = _.map(e.clipboardData.items, item => {
+      var items = _.map(e.clipboardData.items, item => this.readItem(item))
+      return Promise.all(items).then(items => {
+        // 自动优先富文本
+        items.sort((a, b) => {
+          return b.score - a.score
+        })
+        console.log('paste', items)
+        var clipboardData = this.clipboardDataList[this.index]
+        clipboardData.items = items
+        clipboardData.itemIndex = 0
+      }).then(() => {
+        this.$message({
+          message: '复制成功',
+          type: 'success'
+        })
+      })
+    },
+    readItem (item) {
+      return new Promise((resolve, reject) => {
         var ret = {
           kind: item.kind,
           type: item.type
         }
+        ret.score = this.getScore(item.type)
         if (item.kind === 'file') {
           var file = item.getAsFile()
-          var url = URL.createObjectURL(file)
-          ret.data = url
+          var reader = new FileReader()
+          _.extend(ret, {
+            name: file.name,
+            lastModified: file.lastModified,
+            size: file.size
+          })
+          reader.onload = function () {
+            var base64 = reader.result // base64
+            ret.data = base64
+            resolve(ret)
+          }
+          reader.onerror = _.noop
+          reader.readAsDataURL(file)
         } else {
-          ret.data = e.clipboardData.getData(item.type)
+          item.getAsString(str => {
+            ret.data = str
+            resolve(ret)
+          })
         }
-        ret.score = this.getScore(item.type)
-        return ret
       })
-
-      // 自动优先富文本
-      items.sort((a, b) => {
-        return b.score - a.score
-      })
-
-      console.log(items)
-      this.paste.types = _.map(items, item => item.type)
-      this.paste.currentType = this.paste.types[0]
-      this.paste.items = items
     },
     getScore (type) {
       if (/image/i.test(type)) {
@@ -117,5 +142,19 @@ html {
 }
 .text-center {
   text-align: center;
+}
+.preview {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  resize: both;
+  padding: 10px;
+  word-wrap: break-word;
+  overflow: auto;
+}
+.preview .height-limit {
+  max-height: 350px;
+}
+.el-tabs__content {
+  overflow: visible;
 }
 </style>
