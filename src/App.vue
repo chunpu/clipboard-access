@@ -17,22 +17,31 @@
               class="pretty-textarea margin-vertical"
               type="textarea"
               :autosize="{minRows: 2, maxRows: 2}"
-              value="Press Ctrl / Command + V to Paste\\r\\nPress Ctrl / Command + C to Copy"
+              v-model="hint"
+
               @paste.native.prevent
               >
             </el-input>
-
             <div class="types" v-if="clipboardData.items.length !== 0">
-              <!-- TODO 改成 el-tag, 可删减 -->
-              <el-radio-group v-model="clipboardData.itemIndex">
-                <el-radio-button v-for="(item, i) in clipboardData.items" :label="i">{{item.type}}</el-radio-button>
-              </el-radio-group>
+              <el-tag
+                :key="i"
+                v-for="(item, i) in clipboardData.items"
+                :type="clipboardData.itemIndex == i ? 'primary' : 'gray'"
+                :closable="clipboardData.isEditMode"
+                :close-transition="true"
+                @click.native="clipboardData.itemIndex = i"
+                @close="clipboardData.items.splice(i, 1)"
+              >{{item.type}}
+              </el-tag>
               <el-input
                 v-if="clipboardData.isEditMode"
                 placeholder="Input Type"
                 icon="plus"
                 v-model="clipboardData.newItemType"
-                style="margin: 0 10px; width: 130px"
+                size="small"
+                class="new-item-type"
+                :on-icon-click="handleAddItem"
+                @keyup.enter.native="handleAddItem"
                 >
               </el-input>
             </div>
@@ -97,6 +106,7 @@ export default {
   name: 'app',
   data () {
     return {
+      hint: 'Press Ctrl / Command + V to Paste\nPress Ctrl / Command + C to Copy',
       clipboardDataList: [],
       index: null
     }
@@ -119,6 +129,23 @@ export default {
         textarea: '', // 鼠标操作区只能是 textarea
         isEditMode: false // 是否是编辑模式
       }
+    },
+    createItem (type) {
+      var item = {
+        type: type,
+        data: '',
+        score: this.getScore(type),
+        showRaw: !this.isTypeCanPreview(type)
+      }
+      return item
+    },
+    handleAddItem () {
+      var clipboardData = this.clipboardDataList[this.index]
+      if (clipboardData) {
+        clipboardData.items.push(this.createItem(clipboardData.newItemType))
+      }
+      clipboardData.itemIndex = clipboardData.items.length - 1
+      clipboardData.newItemType = ''
     },
     isTypeCanPreview(type) {
       // 不是图片也不是 html
@@ -176,12 +203,8 @@ export default {
     },
     readItem (item) {
       return new Promise((resolve, reject) => {
-        var ret = {
-          kind: item.kind,
-          type: item.type,
-          showRaw: !this.isTypeCanPreview(item.type)
-        }
-        ret.score = this.getScore(item.type)
+        var ret = this.createItem(item.type)
+        ret.kind = item.kind
         if (item.kind === 'file') {
           var file = item.getAsFile()
           if (!file) {
@@ -261,5 +284,22 @@ html {
 .margin-vertical {
   margin-top: 15px;
   margin-bottom: 15px;
+}
+.el-tag+.el-tag {
+    margin-left: 10px;
+}
+.el-tag {
+  cursor: pointer;
+}
+.new-item-type {
+  margin: 0 10px;
+  width: 115px;
+  height: 24px;
+  line-height: 22px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.new-item-type input {
+  height: 100% !important;
 }
 </style>
