@@ -1,7 +1,8 @@
 <template>
   <div id="app">
     <div id="box">
-      <el-button @click="addClipboard()" style="margin: 15px 0">Add Clipboard</el-button>
+      <el-button @click="addClipboard()" class="margin-vertical">Add Clipboard</el-button>
+      <!-- TODO 改成列表, 可预览 -->
       <el-tabs v-model="index">
         <el-tab-pane label="Tab" v-for="clipboardData in clipboardDataList">
           <div>
@@ -11,11 +12,23 @@
               <!-- 只支持 flash -->
               <!-- <el-button :plain="true" type="success" @click="copyToClipboard(clipboardData)">Copy to Clipboard</el-button> -->
             </div>
-            <div class="types">
+
+            <el-input
+              class="pretty-textarea margin-vertical"
+              type="textarea"
+              :autosize="{minRows: 2, maxRows: 2}"
+              value="Press Ctrl / Command + V to Paste\\r\\nPress Ctrl / Command + C to Copy"
+              @paste.native.prevent
+              >
+            </el-input>
+
+            <div class="types" v-if="clipboardData.items.length !== 0">
+              <!-- TODO 改成 el-tag, 可删减 -->
               <el-radio-group v-model="clipboardData.itemIndex">
                 <el-radio-button v-for="(item, i) in clipboardData.items" :label="i">{{item.type}}</el-radio-button>
               </el-radio-group>
               <el-input
+                v-if="clipboardData.isEditMode"
                 placeholder="Input Type"
                 icon="plus"
                 v-model="clipboardData.newItemType"
@@ -23,15 +36,16 @@
                 >
               </el-input>
             </div>
-            <div v-if="clipboardData.items.length === 0">
+
+<!--             <div v-if="clipboardData.items.length === 0">
               <el-alert
-                style="margin: 15px 0;"
+                class="margin-vertical"
                 title="Press Ctrl / Command + V"
                 type="info"
                 :closable="false"
                 show-icon>
               </el-alert>
-            </div>
+            </div> -->
             <div v-for="(item, i) in clipboardData.items" v-if="i === clipboardData.itemIndex">
               <div v-if="clipboardData.isEditMode">
                 <el-input
@@ -49,7 +63,7 @@
 
                 </div>
 
-                <el-checkbox v-if="isTypeCanPreview(item.type)" style="margin: 15px 0;" v-model="item.showRaw">Raw</el-checkbox>
+                <el-checkbox v-if="isTypeCanPreview(item.type)" class="margin-vertical" v-model="item.showRaw">Raw</el-checkbox>
 
                 <div class="preview-box" v-if="item.showRaw && isTypeCanPreview(item.type)">
                   <div v-text="item.data" class="height-limit"></div>
@@ -138,6 +152,11 @@ export default {
           message: 'Paste Success',
           type: 'success'
         })
+      }).catch(e => {
+        this.$message({
+          message: 'Paste Fail',
+          type: 'error'
+        })
       })
     },
     onCopy (e) {
@@ -165,6 +184,9 @@ export default {
         ret.score = this.getScore(item.type)
         if (item.kind === 'file') {
           var file = item.getAsFile()
+          if (!file) {
+            return reject(new Error('read item fail'))
+          }
           var reader = new FileReader()
           _.extend(ret, {
             name: file.name,
@@ -231,5 +253,13 @@ html {
 }
 .el-tabs__content {
   overflow: visible;
+}
+.pretty-textarea textarea {
+  border: 2px dashed #ddd;
+  color: #ddd;
+}
+.margin-vertical {
+  margin-top: 15px;
+  margin-bottom: 15px;
 }
 </style>
