@@ -1,3 +1,11 @@
+TODO
+
+input 应该是 textarea, 仿照 webuploader 虚线
+
+学习内容复制
+
+加上 logo
+
 # clipboard-access
 
 > Show or Set your Clipboard Data

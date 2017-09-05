@@ -1,29 +1,60 @@
 <template>
   <div id="app">
     <div id="box">
-      <el-tabs>
+      <el-button @click="addClipboard()" style="margin: 15px 0">Add Clipboard</el-button>
+      <el-tabs v-model="index">
         <el-tab-pane label="Tab" v-for="clipboardData in clipboardDataList">
           <div>
-
+            <!-- clipboard 级别操作区域 -->
+            <div>
+              <el-button type="text" :disabled="clipboardData.isEditMode" @click="clipboardData.isEditMode = true">Edit Clipboard</el-button>
+              <!-- 只支持 flash -->
+              <!-- <el-button :plain="true" type="success" @click="copyToClipboard(clipboardData)">Copy to Clipboard</el-button> -->
+            </div>
             <div class="types">
               <el-radio-group v-model="clipboardData.itemIndex">
                 <el-radio-button v-for="(item, i) in clipboardData.items" :label="i">{{item.type}}</el-radio-button>
               </el-radio-group>
+              <el-input
+                placeholder="Input Type"
+                icon="plus"
+                v-model="clipboardData.newItemType"
+                style="margin: 0 10px; width: 130px"
+                >
+              </el-input>
             </div>
-
+            <div v-if="clipboardData.items.length === 0">
+              <el-alert
+                style="margin: 15px 0;"
+                title="Press Ctrl / Command + V"
+                type="info"
+                :closable="false"
+                show-icon>
+              </el-alert>
+            </div>
             <div v-for="(item, i) in clipboardData.items" v-if="i === clipboardData.itemIndex">
-<!--               <el-input
-                type="textarea"
-                :autosize="{minRows: 6, maxRows: 6}"
-                placeholder="Ctrl/Command + v"
-                v-model="item.data">
-              </el-input> -->
-              <div class="preview">
-                <div v-if="item.showRaw" v-text="item.data" class="height-limit"></div>
-                <div class="text-center" v-else-if="/image/i.test(item.type)"><img :src="item.data" style="max-width: 100%"></div>
-                <div v-else-if="item.type === 'text/html'" v-html="item.data" class="height-limit"></div>
+              <div v-if="clipboardData.isEditMode">
+                <el-input
+                  type="textarea"
+                  :autosize="{minRows: 3, maxRows: 12}"
+                  placeholder="Input Clipboard Content"
+                  v-model="item.data">
+                </el-input>
               </div>
-              <el-checkbox v-if="isTypeCanPreview(item.type)" style="margin: 15px 0;" v-model="item.showRaw">Raw</el-checkbox>
+              <div class="preview" v-else>
+                <div class="preview-box">
+                  <div v-if="!isTypeCanPreview(item.type)" v-text="item.data" class="height-limit"></div>
+                  <div class="text-center" v-else-if="/image/i.test(item.type)"><img :src="item.data" style="max-width: 100%"></div>
+                  <div v-else-if="item.type === 'text/html'" v-html="item.data" class="height-limit"></div>
+
+                </div>
+
+                <el-checkbox v-if="isTypeCanPreview(item.type)" style="margin: 15px 0;" v-model="item.showRaw">Raw</el-checkbox>
+
+                <div class="preview-box" v-if="item.showRaw && isTypeCanPreview(item.type)">
+                  <div v-text="item.data" class="height-limit"></div>
+                </div>
+              </div>
             </div>
           </div>
         </el-tab-pane>
@@ -52,21 +83,27 @@ export default {
   name: 'app',
   data () {
     return {
-      clipboardDataList: [this.createClipboardData()],
-      index: 0
+      clipboardDataList: [],
+      index: null
     }
   },
   watch: {
   },
   mounted () {
     window.app = this
+    this.addClipboard()
     document.addEventListener('paste', this.onPaste)
+    document.addEventListener('copy', this.onCopy)
   },
   methods: {
     createClipboardData () {
       return {
-        items: [],
-        itemIndex: 0
+        items: [], // item list
+        itemIndex: 0, // 当前显示的 item
+        name: this.clipboardDataList.length + '', // 名称, 用来显示 tab 的, 需要是字符串
+        newItemType: '', // 新建的 item 类型
+        textarea: '', // 鼠标操作区只能是 textarea
+        isEditMode: false // 是否是编辑模式
       }
     },
     isTypeCanPreview(type) {
@@ -75,6 +112,12 @@ export default {
         return true
       }
       return false
+    },
+    copyToClipboard (clipboardData) {
+      var promises = _.map(clipboardData.items, item => {
+        return new Promise()
+      })
+      return Promise.all()
     },
     onPaste (e) {
       var items = _.map(e.clipboardData.items, item => this.readItem(item))
@@ -85,6 +128,9 @@ export default {
         })
         console.log('paste', items)
         var clipboardData = this.clipboardDataList[this.index]
+        if (clipboardData.items.length !== 0) {
+          clipboardData = this.addClipboard()
+        }
         clipboardData.items = items
         clipboardData.itemIndex = 0
       }).then(() => {
@@ -93,6 +139,21 @@ export default {
           type: 'success'
         })
       })
+    },
+    onCopy (e) {
+      var dataTransfer = e.clipboardData
+      dataTransfer.clearData()
+      var clipboardData = this.clipboardDataList[this.index]
+      if (clipboardData) {
+        _.each(clipboardData.items, item => {
+          dataTransfer.setData(item.type, item.data)
+        })
+        this.$message({
+          message: 'Copy Success',
+          type: 'success'
+        })
+      }
+      e.preventDefault() // 默认是复制选中区域, 但不能 return false
     },
     readItem (item) {
       return new Promise((resolve, reject) => {
@@ -132,6 +193,12 @@ export default {
         return 50
       }
       return 0
+    },
+    addClipboard () {
+      var clipboardData = this.createClipboardData()
+      this.clipboardDataList.push(clipboardData)
+      this.index = (this.clipboardDataList.length - 1) + ''
+      return clipboardData
     }
   }
 }
@@ -151,7 +218,7 @@ html {
 .text-center {
   text-align: center;
 }
-.preview {
+.preview-box {
   border: 1px solid #ddd;
   border-radius: 5px;
   resize: both;
@@ -159,7 +226,7 @@ html {
   word-wrap: break-word;
   overflow: auto;
 }
-.preview .height-limit {
+.preview-box .height-limit {
   max-height: 350px;
 }
 .el-tabs__content {
