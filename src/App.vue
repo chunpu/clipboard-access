@@ -3,9 +3,9 @@
     <div id="box">
       <el-button @click="addClipboard()" class="margin-vertical">Add Clipboard</el-button>
       <!-- TODO 改成列表, 可预览 -->
-      <el-tabs v-model="index">
-        <el-tab-pane label="Tab" v-for="clipboardData in clipboardDataList">
-          <div>
+      <!-- <el-tabs v-model="index"> -->
+        <!-- <el-tab-pane label="Tab" v-for="clipboardData in clipboardDataList"> -->
+          <div v-for="(clipboardData, i) in clipboardDataList" v-if="index === i" class="detail">
             <!-- clipboard 级别操作区域 -->
             <div>
               <el-button type="text" :disabled="clipboardData.isEditMode" @click="clipboardData.isEditMode = true">Edit Clipboard</el-button>
@@ -18,7 +18,6 @@
               type="textarea"
               :autosize="{minRows: 2, maxRows: 2}"
               v-model="hint"
-
               @paste.native.prevent
               >
             </el-input>
@@ -80,8 +79,23 @@
               </div>
             </div>
           </div>
-        </el-tab-pane>
-      </el-tabs>
+        <!-- </el-tab-pane> -->
+      <!-- </el-tabs> -->
+
+      <!-- 历史必须是方形的 -->
+      <div class="history">
+        <div
+          v-for="(clipboardData, i) in clipboardDataList"
+          :class="{'history-item': true, 'margin-vertical': true, 'history-item-current': index === i}"
+          @click="index = i"
+          v-if="clipboardData.items.length !== 0">
+          <div v-for="(item, i) in clipboardData.items" v-if="i === 0" style="height: 100%">
+            <div class="text-center" v-if="/image/i.test(item.type)" style="height: 100%"><img :src="item.data" style="max-width: 100%; max-height: 100%"></div>
+            <div v-else-if="item.type === 'text/html'" v-html="item.data"></div>
+            <div v-else v-text="item.data"></div>
+          </div>
+        </div>
+      </div>
     </div>
     <!-- <router-view></router-view> -->
   </div>
@@ -127,7 +141,8 @@ export default {
         name: this.clipboardDataList.length + '', // 名称, 用来显示 tab 的, 需要是字符串
         newItemType: '', // 新建的 item 类型
         textarea: '', // 鼠标操作区只能是 textarea
-        isEditMode: false // 是否是编辑模式
+        isEditMode: false, // 是否是编辑模式
+        timestamp: _.now()
       }
     },
     createItem (type) {
@@ -153,12 +168,6 @@ export default {
         return true
       }
       return false
-    },
-    copyToClipboard (clipboardData) {
-      var promises = _.map(clipboardData.items, item => {
-        return new Promise()
-      })
-      return Promise.all()
     },
     onPaste (e) {
       var items = _.map(e.clipboardData.items, item => this.readItem(item))
@@ -241,8 +250,8 @@ export default {
     },
     addClipboard () {
       var clipboardData = this.createClipboardData()
-      this.clipboardDataList.push(clipboardData)
-      this.index = (this.clipboardDataList.length - 1) + ''
+      this.clipboardDataList.unshift(clipboardData)
+      this.index = 0
       return clipboardData
     }
   }
@@ -250,12 +259,15 @@ export default {
 </script>
 
 <style>
+body {
+  background: #f5f5f5;
+}
 #box {
-    width: 600px;
-    margin: 100px auto;
+  width: 600px;
+  margin: 100px auto;
 }
 html {
-    min-height: 101%;
+  /*min-height: 101%;*/
 }
 .types {
   margin: 20px 0;
@@ -272,7 +284,7 @@ html {
   overflow: auto;
 }
 .preview-box .height-limit {
-  max-height: 350px;
+  max-height: 150px;
 }
 .el-tabs__content {
   overflow: visible;
@@ -301,5 +313,37 @@ html {
 }
 .new-item-type input {
   height: 100% !important;
+}
+.history {
+  width: 230px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  overflow: auto;
+  padding: 10px;
+  box-sizing: border-box;
+}
+.history-item {
+  box-sizing: border-box;
+  width: 100%;
+  font-size: 12px;
+  height: 200px;
+  overflow: hidden;
+  margin: 15px 0;
+  padding: 1rem;
+  background: #fff;
+  cursor: pointer;
+  /*border-radius: 5px;*/
+  /*box-shadow: 1px 2px 8px 1px rgba(0, 0, 0, 0.25);*/
+  transition: all .3s;
+}
+.history-item:hover, .history-item-current {
+  box-shadow: 1px 2px 8px 1px rgba(0, 0, 0, 0.25);
+  outline: 2px solid #20a0ff;
+}
+.detail {
+  background: #fff;
+  padding: 10px;
 }
 </style>
