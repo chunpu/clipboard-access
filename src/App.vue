@@ -99,7 +99,7 @@
         <div
           v-for="(item, i) in clipboardData.items"
           v-if="clipboardData.items.length !== 0 && i === 0"
-          style="height: 100%">
+          style="height: 100%; margin: 1rem; overflow: hidden; text-overflow: ellipsis;">
           <div class="text-center" v-if="/image/i.test(item.type)" style="height: 100%"><img :src="item.data" style="max-width: 100%; max-height: 100%"></div>
           <div v-else-if="item.type === 'text/html'" v-html="item.data"></div>
           <div v-else v-text="item.data"></div>
@@ -344,7 +344,7 @@ html {
   font-size: 12px;
   overflow: hidden;
   margin: 0rem 1.5rem 1.5rem 1.5rem;
-  padding: 1rem;
+  /*padding: 1rem;*/
   background: #fff;
   cursor: pointer;
   /*border-radius: 5px;*/
