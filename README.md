@@ -1,14 +1,31 @@
-TODO
-
-input 应该是 textarea, 仿照 webuploader 虚线
-
-学习内容复制
-
-加上 logo
-
-# clipboard-access
+# Clipboard Access
 
 > Show or Set your Clipboard Data
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/chunpu/clipboard-access/master/static/clipboad-access-demo.png" alt="Demo">
+</p>
+
+## Usage
+
+Press `Ctrl / Command + V` to Paste
+
+Press `Ctrl / Command + C` to Copy
+
+## View Clipboard Data
+
+- Press `Ctrl / Command + V` to Paste
+- View all types Clipboard Data
+
+## Edit Clipboard Data
+
+- Click the `Edit` Tab and edit Clipboard Data
+- Click other area in page
+- Press `Ctrl / Command + C` to Copy
+
+## History
+
+Your can see Clipboard History in right sidebar
 
 ## Build Setup
 
@@ -25,5 +42,3 @@ npm run build
 # build for production and view the bundle analyzer report
 npm run build --report
 ```
-
-For detailed explanation on how things work, checkout the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
