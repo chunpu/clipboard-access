@@ -12,12 +12,12 @@ Press `Ctrl / Command + V` to Paste
 
 Press `Ctrl / Command + C` to Copy
 
-## View Clipboard Data
+## View Clipboard
 
 - Press `Ctrl / Command + V` to Paste
 - View all types Clipboard Data
 
-## Edit Clipboard Data
+## Edit Clipboard
 
 - Click the `Edit` Tab and edit Clipboard Data
 - Click other area in page
