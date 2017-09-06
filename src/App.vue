@@ -88,8 +88,8 @@
 
     <!-- 历史必须是方形的 -->
     <div class="history">
-      <div style="text-align: center">
-        <el-button @click="addClipboard()" class="margin-vertical">Add Clipboard</el-button>
+      <div style="text-align: center" class="margin-vertical">
+        <el-button @click="addClipboard()">Add Clipboard</el-button>
       </div>
       <div
         v-for="(clipboardData, i) in clipboardDataList"
