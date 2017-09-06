@@ -8,14 +8,49 @@
               <!-- 只支持 flash -->
               <!-- <el-button :plain="true" type="success" @click="copyToClipboard(clipboardData)">Copy to Clipboard</el-button> -->
             </div>
-            <el-input
-              class="pretty-textarea margin-vertical"
-              type="textarea"
-              :autosize="{minRows: 2, maxRows: 2}"
-              v-model="hint"
-              @paste.native.prevent
-              >
-            </el-input>
+
+
+<!--             <div v-if="clipboardData.items.length === 0">
+              <el-alert
+                class="margin-vertical"
+                title="Press Ctrl / Command + V"
+                type="info"
+                :closable="false"
+                show-icon>
+              </el-alert>
+            </div> -->
+            <div v-for="(item, i) in clipboardData.items" v-if="i === clipboardData.itemIndex" @paste.stop @copy.stop>
+              <el-tabs v-model="item.activeTab">
+                <el-tab-pane label="Preview" name="Preview">
+                  <div class="preview-box preview-box-border resize">
+                    <div class="text-center" v-if="/image/i.test(item.type)" style="height: 100%"><img :src="item.data" style="max-width: 100%; max-height: 100%"></div>
+                    <div v-else-if="item.type === 'text/html'" v-html="item.data"></div>
+                    <div v-else v-text="item.data"></div>
+                  </div>
+                </el-tab-pane>
+
+                <el-tab-pane label="Raw" name="Raw">
+                  <div class="preview-box preview-box-border resize" v-if="item.activeTab == 'Raw'">
+                    <div v-text="item.data"></div>
+                  </div>
+                </el-tab-pane>
+
+                <el-tab-pane label="Edit" name="Edit">
+                  <div class="preview-box resize full-textarea">
+                    <el-input
+                      v-if="item.activeTab == 'Edit'"
+                      type="textarea"
+                      resize="none"
+                      class="full"
+                      placeholder="Input Clipboard Content"
+                      v-model="item.data">
+                    </el-input>
+                  </div>
+                </el-tab-pane>
+
+              </el-tabs>
+            </div>
+
             <div class="types" v-if="clipboardData.items.length !== 0">
               <el-tag
                 :key="i"
@@ -40,43 +75,15 @@
               </el-input>
             </div>
 
-<!--             <div v-if="clipboardData.items.length === 0">
-              <el-alert
-                class="margin-vertical"
-                title="Press Ctrl / Command + V"
-                type="info"
-                :closable="false"
-                show-icon>
-              </el-alert>
-            </div> -->
-            <div v-for="(item, i) in clipboardData.items" v-if="i === clipboardData.itemIndex">
-              <el-tabs v-model="item.activeTab">
-                <el-tab-pane label="Preview" name="Preview">
-                  <div class="preview-box">
-                    <div class="text-center" v-if="/image/i.test(item.type)" style="height: 100%"><img :src="item.data" style="max-width: 100%; max-height: 100%"></div>
-                    <div v-else-if="item.type === 'text/html'" v-html="item.data"></div>
-                    <div v-else v-text="item.data"></div>
-                  </div>
-                </el-tab-pane>
+            <el-input
+              class="pretty-textarea margin-vertical"
+              type="textarea"
+              :autosize="{minRows: 2, maxRows: 2}"
+              v-model="hint"
+              @paste.native.prevent
+              >
+            </el-input>
 
-                <el-tab-pane label="Raw" name="Raw">
-                  <div class="preview-box" v-if="item.activeTab == 'Raw'">
-                    <div v-text="item.data" class="height-limit"></div>
-                  </div>
-                </el-tab-pane>
-
-                <el-tab-pane label="Edit" name="Edit">
-                  <el-input
-                    v-if="item.activeTab == 'Edit'"
-                    type="textarea"
-                    :autosize="{minRows: 3, maxRows: 12}"
-                    placeholder="Input Clipboard Content"
-                    v-model="item.data">
-                  </el-input>
-                </el-tab-pane>
-
-              </el-tabs>
-            </div>
           </div>
     </div>
     </div>
@@ -280,16 +287,18 @@ html {
 .text-center {
   text-align: center;
 }
-.preview-box {
-  border: 1px solid #ddd;
-  border-radius: 5px;
+.resize {
   resize: both;
+}
+.preview-box {
   padding: 10px;
   word-wrap: break-word;
   overflow: auto;
+  height: 10rem;
 }
-.preview-box .height-limit {
-  max-height: 150px;
+.preview-box-border {
+  border: 1px solid #ddd;
+  border-radius: 5px;
 }
 .el-tabs__content {
   overflow: visible;
@@ -351,5 +360,13 @@ html {
 .detail {
   background: #fff;
   padding: 10px;
+}
+.full {
+  height: 100%;
+  width: 100%;
+}
+.full-textarea textarea {
+  height: 100%;
+  width: 100%;
 }
 </style>
