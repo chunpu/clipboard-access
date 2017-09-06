@@ -1,18 +1,13 @@
 <template>
   <div id="app">
+    <div id="content">
     <div id="box">
-      <el-button @click="addClipboard()" class="margin-vertical">Add Clipboard</el-button>
-      <!-- TODO 改成列表, 可预览 -->
-      <!-- <el-tabs v-model="index"> -->
-        <!-- <el-tab-pane label="Tab" v-for="clipboardData in clipboardDataList"> -->
           <div v-for="(clipboardData, i) in clipboardDataList" v-if="index === i" class="detail">
             <!-- clipboard 级别操作区域 -->
             <div>
-              <el-button type="text" :disabled="clipboardData.isEditMode" @click="clipboardData.isEditMode = true">Edit Clipboard</el-button>
               <!-- 只支持 flash -->
               <!-- <el-button :plain="true" type="success" @click="copyToClipboard(clipboardData)">Copy to Clipboard</el-button> -->
             </div>
-
             <el-input
               class="pretty-textarea margin-vertical"
               type="textarea"
@@ -55,45 +50,54 @@
               </el-alert>
             </div> -->
             <div v-for="(item, i) in clipboardData.items" v-if="i === clipboardData.itemIndex">
-              <div v-if="clipboardData.isEditMode">
-                <el-input
-                  type="textarea"
-                  :autosize="{minRows: 3, maxRows: 12}"
-                  placeholder="Input Clipboard Content"
-                  v-model="item.data">
-                </el-input>
-              </div>
-              <div class="preview" v-else>
-                <div class="preview-box">
-                  <div v-if="!isTypeCanPreview(item.type)" v-text="item.data" class="height-limit"></div>
-                  <div class="text-center" v-else-if="/image/i.test(item.type)"><img :src="item.data" style="max-width: 100%"></div>
-                  <div v-else-if="item.type === 'text/html'" v-html="item.data" class="height-limit"></div>
+              <el-tabs v-model="item.activeTab">
+                <el-tab-pane label="Preview" name="Preview">
+                  <div class="preview-box">
+                    <div class="text-center" v-if="/image/i.test(item.type)" style="height: 100%"><img :src="item.data" style="max-width: 100%; max-height: 100%"></div>
+                    <div v-else-if="item.type === 'text/html'" v-html="item.data"></div>
+                    <div v-else v-text="item.data"></div>
+                  </div>
+                </el-tab-pane>
 
-                </div>
+                <el-tab-pane label="Raw" name="Raw">
+                  <div class="preview-box" v-if="item.activeTab == 'Raw'">
+                    <div v-text="item.data" class="height-limit"></div>
+                  </div>
+                </el-tab-pane>
 
-                <el-checkbox v-if="isTypeCanPreview(item.type)" class="margin-vertical" v-model="item.showRaw">Raw</el-checkbox>
+                <el-tab-pane label="Edit" name="Edit">
+                  <el-input
+                    v-if="item.activeTab == 'Edit'"
+                    type="textarea"
+                    :autosize="{minRows: 3, maxRows: 12}"
+                    placeholder="Input Clipboard Content"
+                    v-model="item.data">
+                  </el-input>
+                </el-tab-pane>
 
-                <div class="preview-box" v-if="item.showRaw && isTypeCanPreview(item.type)">
-                  <div v-text="item.data" class="height-limit"></div>
-                </div>
-              </div>
+              </el-tabs>
             </div>
           </div>
-        <!-- </el-tab-pane> -->
-      <!-- </el-tabs> -->
+    </div>
+    </div>
 
-      <!-- 历史必须是方形的 -->
-      <div class="history">
+    <!-- 历史必须是方形的 -->
+    <div class="history">
+      <div style="text-align: center">
+        <el-button @click="addClipboard()" class="margin-vertical">Add Clipboard</el-button>
+      </div>
+      <div
+        v-for="(clipboardData, i) in clipboardDataList"
+        :class="{'history-item': true, 'margin-vertical': true, 'history-item-current': index === i}"
+        @click="index = i"
+        >
         <div
-          v-for="(clipboardData, i) in clipboardDataList"
-          :class="{'history-item': true, 'margin-vertical': true, 'history-item-current': index === i}"
-          @click="index = i"
-          v-if="clipboardData.items.length !== 0">
-          <div v-for="(item, i) in clipboardData.items" v-if="i === 0" style="height: 100%">
-            <div class="text-center" v-if="/image/i.test(item.type)" style="height: 100%"><img :src="item.data" style="max-width: 100%; max-height: 100%"></div>
-            <div v-else-if="item.type === 'text/html'" v-html="item.data"></div>
-            <div v-else v-text="item.data"></div>
-          </div>
+          v-for="(item, i) in clipboardData.items"
+          v-if="clipboardData.items.length !== 0 && i === 0"
+          style="height: 100%">
+          <div class="text-center" v-if="/image/i.test(item.type)" style="height: 100%"><img :src="item.data" style="max-width: 100%; max-height: 100%"></div>
+          <div v-else-if="item.type === 'text/html'" v-html="item.data"></div>
+          <div v-else v-text="item.data"></div>
         </div>
       </div>
     </div>
@@ -150,7 +154,8 @@ export default {
         type: type,
         data: '',
         score: this.getScore(type),
-        showRaw: !this.isTypeCanPreview(type)
+        // showRaw: !this.isTypeCanPreview(type),
+        activeTab: 'Preview'
       }
       return item
     },
@@ -260,7 +265,7 @@ export default {
 
 <style>
 body {
-  background: #f5f5f5;
+  /*background: #f5f5f5;*/
 }
 #box {
   width: 600px;
@@ -315,31 +320,32 @@ html {
   height: 100% !important;
 }
 .history {
-  width: 230px;
   position: absolute;
   top: 0;
   left: 0;
   height: 100vh;
-  overflow: auto;
-  padding: 10px;
+  overflow-y: auto;
   box-sizing: border-box;
+}
+#content {
+  margin-left: 200px;
 }
 .history-item {
   box-sizing: border-box;
-  width: 100%;
+  width: 150px;
+  height: 150px;
   font-size: 12px;
-  height: 200px;
   overflow: hidden;
-  margin: 15px 0;
+  margin: 0rem 1.5rem 1.5rem 1.5rem;
   padding: 1rem;
   background: #fff;
   cursor: pointer;
   /*border-radius: 5px;*/
-  /*box-shadow: 1px 2px 8px 1px rgba(0, 0, 0, 0.25);*/
-  transition: all .3s;
+  box-shadow: 1px 2px 8px 1px rgba(0, 0, 0, 0.25);
+  /*transition: all .3s;*/
 }
 .history-item:hover, .history-item-current {
-  box-shadow: 1px 2px 8px 1px rgba(0, 0, 0, 0.25);
+  /*box-shadow: 1px 2px 8px 1px rgba(0, 0, 0, 0.25);*/
   outline: 2px solid #20a0ff;
 }
 .detail {
