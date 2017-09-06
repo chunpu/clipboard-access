@@ -8,8 +8,6 @@
               <!-- 只支持 flash -->
               <!-- <el-button :plain="true" type="success" @click="copyToClipboard(clipboardData)">Copy to Clipboard</el-button> -->
             </div>
-
-
 <!--             <div v-if="clipboardData.items.length === 0">
               <el-alert
                 class="margin-vertical"
@@ -275,8 +273,8 @@ body {
   /*background: #f5f5f5;*/
 }
 #box {
-  width: 600px;
-  margin: 100px auto;
+  max-width: 600px;
+  margin: 15vh auto;
 }
 html {
   /*min-height: 101%;*/
@@ -368,5 +366,15 @@ html {
 .full-textarea textarea {
   height: 100%;
   width: 100%;
+}
+
+/* 窄屏幕隐藏右侧元素 */
+@media(max-width: 620px){
+  .history {
+    display: none;
+  }
+  #content {
+    margin-left: 0;
+  }
 }
 </style>
